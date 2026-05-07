@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>lbchub.site — Builder Intelligence</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --g:#00FFA3;--g2:#00cc7a;
+  --purple:#A78BFA;--blue:#60A5FA;--gold:#FBBF24;--red:#F87171;--orange:#FB923C;
+  --bg:#060609;--panel:#0D0D14;--card:#13131C;--card2:#191924;
+  --line:rgba(255,255,255,0.06);--glow:rgba(0,255,163,0.08);
+  --text:#E2E8F0;--sub:#64748B;--sub2:#94A3B8;
+}
+html,body{height:100%;overflow:hidden;font-family:'Space Grotesk',sans-serif;background:var(--bg);color:var(--text);}
+.mono{font-family:'Space Mono',monospace;}
+
+/* ── AMBIENT GLOW ── */
+body::before{content:'';position:fixed;top:-200px;left:50%;transform:translateX(-50%);width:600px;height:400px;background:radial-gradient(ellipse,rgba(0,255,163,0.04) 0%,transparent 70%);pointer-events:none;z-index:0;}
+
+/* ── LAYOUT ── */
+.shell{display:flex;height:100%;position:relative;z-index:1;}
+
+/* ── LEFT RAIL ── */
+.rail{width:64px;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;padding:16px 0;gap:4px;flex-shrink:0;}
+.rail-logo{width:36px;height:36px;background:var(--g);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#060609;margin-bottom:16px;cursor:pointer;}
+.rail-sep{width:32px;height:1px;background:var(--line);margin:8px 0;}
+.rail-btn{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;transition:all .2s;border:1px solid transparent;position:relative;}
+.rail-btn:hover{background:var(--card);border-color:var(--line);}
+.rail-btn.on{background:var(--glow);border-color:rgba(0,255,163,0.2);}
+.rail-tip{position:absolute;left:calc(100% + 10px);background:#1E1E2E;border:1px solid var(--line);border-radius:7px;padding:5px 10px;font-size:11px;white-space:nowrap;color:var(--text);pointer-events:none;opacity:0;transition:opacity .15s;z-index:99;}
+.rail-btn:hover .rail-tip{opacity:1;}
+
+/* ── SIDEBAR ── */
+.sidebar{width:260px;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden;transition:width .25s;}
+.sidebar.collapsed{width:0;overflow:hidden;}
+
+.sb-head{padding:20px 18px 14px;border-bottom:1px solid var(--line);}
+.sb-title{font-size:13px;font-weight:700;margin-bottom:2px;}
+.sb-sub{font-size:11px;color:var(--sub);font-family:'Space Mono',monospace;}
+
+.sb-section{font-size:9px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.14em;padding:14px 18px 6px;font-family:'Space Mono',monospace;}
+
+.sb-link{display:flex;align-items:center;gap:10px;padding:8px 16px;cursor:pointer;font-size:13px;color:var(--sub2);transition:all .15s;margin:1px 8px;border-radius:9px;border:1px solid transparent;white-space:nowrap;}
+.sb-link:hover{background:var(--card);color:var(--text);}
+.sb-link.on{background:var(--glow);color:var(--g);border-color:rgba(0,255,163,0.15);}
+.sb-link .sl-icon{font-size:15px;width:20px;text-align:center;flex-shrink:0;}
+.sb-link .sl-txt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;}
+.sb-link .sl-badge{font-size:9px;font-family:'Space Mono',monospace;background:var(--card2);border-radius:4px;padding:2px 6px;color:var(--sub);flex-shrink:0;}
+.sb-link.on .sl-badge{color:rgba(0,255,163,.5);background:rgba(0,255,163,.06);}
+
+.sb-divider{height:1px;background:var(--line);margin:8px 18px;}
+
+.sb-hist{flex:1;overflow-y:auto;padding-bottom:16px;}
+.sh-item{padding:8px 16px;margin:1px 8px;border-radius:8px;cursor:pointer;transition:all .15s;}
+.sh-item:hover{background:var(--card);}
+.shi-q{font-size:12px;color:var(--sub2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:2px;}
+.shi-m{font-size:10px;color:var(--sub);font-family:'Space Mono',monospace;}
+
+/* ── MAIN ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;}
+
+/* ── TOP BAR ── */
+.topbar{height:56px;display:flex;align-items:center;padding:0 20px;border-bottom:1px solid var(--line);background:rgba(6,6,9,0.95);backdrop-filter:blur(12px);flex-shrink:0;gap:12px;}
+.tb-toggle{width:32px;height:32px;border-radius:8px;background:var(--card);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;transition:all .2s;flex-shrink:0;}
+.tb-toggle:hover{border-color:rgba(0,255,163,.2);}
+.tb-path{flex:1;display:flex;align-items:center;gap:6px;font-size:12px;color:var(--sub);font-family:'Space Mono',monospace;overflow:hidden;}
+.tb-path span{white-space:nowrap;}
+.tb-path .sep{opacity:.4;}
+.tb-path .cur{color:var(--g);}
+.tb-pills{display:flex;gap:6px;flex-shrink:0;}
+.tb-pill{display:flex;align-items:center;gap:5px;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:5px 11px;font-size:11px;font-family:'Space Mono',monospace;}
+.tb-pill .pv{color:var(--g);font-weight:700;}
+.tb-pill .pl{color:var(--sub);}
+.live-pill{background:rgba(0,255,163,.06);border-color:rgba(0,255,163,.18);color:var(--g);}
+.live-dot{width:6px;height:6px;background:var(--g);border-radius:50%;animation:pulse 1.8s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.15;}}
+
+/* ── COMMAND BAR ── */
+.cmdbar{padding:14px 20px;border-bottom:1px solid var(--line);background:var(--panel);flex-shrink:0;}
+.cmd-row{display:flex;gap:10px;margin-bottom:10px;}
+.cmd-input{flex:1;display:flex;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:0 16px;gap:10px;transition:all .2s;}
+.cmd-input:focus-within{border-color:rgba(0,255,163,.3);box-shadow:0 0 0 3px rgba(0,255,163,.05);}
+.cmd-prompt{font-family:'Space Mono',monospace;font-size:12px;color:var(--g);opacity:.6;flex-shrink:0;}
+.cmd-input input{flex:1;background:none;border:none;outline:none;color:var(--text);font-size:14px;font-family:'Space Grotesk',sans-serif;padding:13px 0;}
+.cmd-input input::placeholder{color:var(--sub);}
+.cmd-x{background:none;border:none;color:var(--sub);cursor:pointer;font-size:15px;padding:4px;display:none;transition:color .2s;}
+.cmd-x:hover{color:var(--text);}
+.cmd-x.show{display:block;}
+
+.cmd-modes{display:flex;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:3px;gap:2px;flex-shrink:0;}
+.cmd-mode{padding:7px 14px;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer;border:none;background:none;color:var(--sub);font-family:'Space Grotesk',sans-serif;transition:all .15s;white-space:nowrap;}
+.cmd-mode.on{background:var(--g);color:#060609;}
+
+.cmd-run{background:var(--g);color:#060609;border:none;border-radius:12px;padding:0 22px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Space Mono',monospace;white-space:nowrap;transition:all .2s;flex-shrink:0;}
+.cmd-run:hover{opacity:.9;transform:translateY(-1px);}
+.cmd-run:disabled{opacity:.25;cursor:not-allowed;transform:none;}
+
+.cmd-tags{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.cmd-tag-label{font-size:10px;color:var(--sub);font-family:'Space Mono',monospace;flex-shrink:0;}
+.f-tag{font-size:11px;font-family:'Space Mono',monospace;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:4px 10px;color:var(--sub);cursor:pointer;transition:all .15s;white-space:nowrap;}
+.f-tag:hover{border-color:rgba(0,255,163,.2);color:var(--sub2);}
+.f-tag.on{border-color:rgba(0,255,163,.3);color:var(--g);background:var(--glow);}
+.f-div{width:1px;height:14px;background:var(--line);flex-shrink:0;}
+.q-preset{font-size:11px;font-family:'Space Mono',monospace;color:var(--sub);cursor:pointer;padding:4px 8px;border-radius:5px;white-space:nowrap;transition:all .15s;}
+.q-preset:hover{color:var(--text);background:var(--card);}
+
+/* ── CONTENT ── */
+.content{flex:1;overflow-y:auto;padding:24px;}
+
+/* scrollbar */
+::-webkit-scrollbar{width:3px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--line);border-radius:2px;}
+
+/* EMPTY */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:40px;text-align:center;}
+.e-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:680px;margin-bottom:36px;}
+@media(max-width:700px){.e-grid{grid-template-columns:1fr 1fr;}}
+.e-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;cursor:pointer;text-align:left;transition:all .2s;position:relative;overflow:hidden;}
+.e-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent,var(--g));}
+.e-card:hover{border-color:rgba(255,255,255,.12);transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,.4);}
+.ec-icon{font-size:24px;margin-bottom:10px;}
+.ec-title{font-size:13px;font-weight:700;margin-bottom:4px;}
+.ec-desc{font-size:11px;color:var(--sub2);line-height:1.5;}
+.e-hint{font-size:11px;color:var(--sub);font-family:'Space Mono',monospace;}
+
+/* LOADING */
+.loading{display:none;max-width:480px;margin:60px auto 0;}
+.loading.on{display:block;}
+.load-card{background:var(--card);border:1px solid rgba(0,255,163,.15);border-radius:16px;padding:28px;}
+.load-head{display:flex;align-items:center;gap:14px;margin-bottom:22px;}
+.load-ring{width:32px;height:32px;border:2px solid var(--line);border-top-color:var(--g);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.load-title{font-size:14px;font-weight:700;}
+.load-sub{font-size:11px;color:var(--sub);margin-top:2px;font-family:'Space Mono',monospace;}
+.load-steps{display:flex;flex-direction:column;gap:10px;}
+.lstep{display:flex;align-items:center;gap:10px;font-size:12px;font-family:'Space Mono',monospace;color:var(--sub);}
+.lstep.done{color:var(--g);}
+.lstep.now{color:var(--text);}
+.lstep-dot{width:8px;height:8px;border-radius:50%;background:var(--sub);flex-shrink:0;}
+.lstep.done .lstep-dot{background:var(--g);}
+.lstep.now .lstep-dot{background:var(--text);animation:pulse 1s infinite;}
+.load-track{height:2px;background:var(--line);border-radius:1px;margin-top:22px;overflow:hidden;}
+.load-fill{height:100%;background:linear-gradient(90deg,var(--g),var(--g2));border-radius:1px;transition:width .5s ease;width:0%;}
+
+/* RESULTS */
+.r-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px;}
+.rh-query{font-size:18px;font-weight:700;}
+.rh-query em{color:var(--g);font-style:normal;}
+.rh-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.rh-tag{font-size:11px;font-family:'Space Mono',monospace;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:3px 9px;color:var(--sub);}
+.rh-acts{display:flex;gap:6px;}
+.rh-act{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:6px 12px;font-size:11px;color:var(--sub2);cursor:pointer;font-family:'Space Grotesk',sans-serif;transition:all .2s;display:flex;align-items:center;gap:5px;}
+.rh-act:hover{border-color:rgba(0,255,163,.2);color:var(--text);}
+
+/* STAT ROW */
+.stat-row{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:18px;}
+@media(max-width:700px){.stat-row{grid-template-columns:repeat(3,1fr);}}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;text-align:center;}
+.s-num{font-size:22px;font-weight:700;font-family:'Space Mono',monospace;}
+.s-label{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--sub);margin-top:3px;}
+
+/* ANGLE */
+.angle{display:flex;gap:12px;background:linear-gradient(135deg,rgba(0,255,163,.04),rgba(167,139,250,.04));border:1px solid rgba(0,255,163,.1);border-radius:14px;padding:16px 18px;margin-bottom:16px;}
+.angle-icon{font-size:18px;flex-shrink:0;margin-top:1px;}
+.angle-body .ab-label{font-size:9px;font-weight:700;color:var(--g);text-transform:uppercase;letter-spacing:.12em;margin-bottom:4px;font-family:'Space Mono',monospace;}
+.angle-body .ab-text{font-size:13px;color:var(--text);line-height:1.6;}
+
+/* WHITESPACE */
+.ws-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;}
+.ws-tag{display:flex;align-items:center;gap:5px;font-size:11px;font-family:'Space Mono',monospace;color:var(--gold);background:rgba(251,191,36,.05);border:1px solid rgba(251,191,36,.15);border-radius:7px;padding:5px 11px;}
+.ws-tag::before{content:'◇';font-size:10px;}
+
+/* DNA */
+.dna{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:16px;}
+.dna-head{display:flex;align-items:center;gap:8px;margin-bottom:14px;}
+.dna-title{font-size:12px;font-weight:700;}
+.dna-ct{font-size:10px;font-family:'Space Mono',monospace;background:var(--card2);border-radius:4px;padding:2px 7px;color:var(--sub);}
+.dna-rows{display:flex;flex-direction:column;gap:7px;}
+.dna-row{display:flex;align-items:center;gap:10px;}
+.dr-name{font-size:11px;font-family:'Space Mono',monospace;color:var(--sub2);width:120px;text-align:right;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.dr-bar{flex:1;height:4px;background:var(--card2);border-radius:2px;overflow:hidden;}
+.dr-fill{height:100%;background:linear-gradient(90deg,var(--g),rgba(0,255,163,.3));border-radius:2px;transition:width .9s cubic-bezier(.16,1,.3,1);}
+.dr-n{font-size:10px;font-family:'Space Mono',monospace;color:var(--sub);width:14px;text-align:right;flex-shrink:0;}
+
+/* TABS */
+.tabs{display:flex;border-bottom:1px solid var(--line);margin-bottom:18px;gap:0;overflow-x:auto;}
+.tab{padding:10px 18px;font-size:12px;font-weight:600;color:var(--sub);cursor:pointer;border-bottom:2px solid transparent;font-family:'Space Mono',monospace;white-space:nowrap;transition:all .15s;}
+.tab.on{color:var(--g);border-bottom-color:var(--g);}
+.tab-n{font-size:10px;background:var(--card2);border-radius:4px;padding:1px 6px;margin-left:5px;}
+
+/* PROJECT CARD */
+.pcard{background:var(--card);border:1px solid var(--line);border-radius:14px;margin-bottom:10px;overflow:hidden;cursor:pointer;transition:all .2s;}
+.pcard:hover{border-color:rgba(0,255,163,.2);box-shadow:0 4px 32px rgba(0,0,0,.5);}
+.pc-body{padding:20px;}
+.pc-top{display:flex;align-items:flex-start;gap:12px;margin-bottom:10px;}
+.pc-avatar{width:40px;height:40px;border-radius:10px;background:var(--card2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.pc-info{flex:1;min-width:0;}
+.pc-name{font-size:15px;font-weight:700;margin-bottom:5px;line-height:1.2;}
+.pc-chips{display:flex;gap:5px;flex-wrap:wrap;}
+.chip{font-size:10px;font-family:'Space Mono',monospace;padding:2px 8px;border-radius:5px;border:1px solid;white-space:nowrap;font-weight:600;}
+.chip-hack{background:rgba(167,139,250,.08);border-color:rgba(167,139,250,.2);color:var(--purple);}
+.chip-score{background:rgba(0,255,163,.06);border-color:rgba(0,255,163,.18);color:var(--g);}
+.chip-win{background:rgba(251,191,36,.07);border-color:rgba(251,191,36,.2);color:var(--gold);}
+.chip-acc{background:rgba(0,255,163,.05);border-color:rgba(0,255,163,.12);color:var(--g);}
+.chip-crowd{background:var(--card2);border-color:var(--line);color:var(--sub2);}
+
+.pc-liner{font-size:13px;color:var(--sub2);line-height:1.6;margin-bottom:10px;}
+.pc-quote{font-size:11px;color:var(--sub2);background:var(--card2);border-radius:8px;padding:10px 14px;border-left:2px solid var(--g);line-height:1.6;margin-bottom:10px;font-style:italic;}
+.pc-tags{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:0;}
+.pc-tag{font-size:10px;font-family:'Space Mono',monospace;color:var(--sub);background:var(--card2);border-radius:4px;padding:2px 7px;}
+
+.pc-foot{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:var(--card2);border-top:1px solid var(--line);}
+.pc-links{display:flex;gap:10px;}
+.pc-link{font-size:11px;color:var(--sub2);text-decoration:none;font-family:'Space Mono',monospace;display:flex;align-items:center;gap:4px;transition:color .15s;}
+.pc-link:hover{color:var(--g);}
+.pc-team{font-size:10px;color:var(--sub);font-family:'Space Mono',monospace;}
+
+/* ARCHIVE CARD */
+.acard{background:var(--card);border:1px solid var(--line);border-left:2px solid var(--g);border-radius:0 14px 14px 0;padding:16px 20px;margin-bottom:10px;transition:all .2s;}
+.acard:hover{border-color:rgba(0,255,163,.25);}
+.ac-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:6px;}
+.ac-src{font-size:10px;font-family:'Space Mono',monospace;color:var(--g);font-weight:700;}
+.ac-pct{font-size:10px;font-family:'Space Mono',monospace;background:var(--card2);border-radius:4px;padding:2px 7px;color:var(--sub);}
+.ac-title{font-size:14px;font-weight:700;margin-bottom:8px;line-height:1.3;}
+.ac-snip{font-size:12px;color:var(--sub2);line-height:1.7;}
+.ac-meta{margin-top:9px;font-size:10px;color:var(--sub);font-family:'Space Mono',monospace;display:flex;gap:10px;flex-wrap:wrap;}
+.ac-meta a{color:var(--g);text-decoration:none;}
+
+/* PULSE GRID */
+.pulse-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+@media(min-width:900px){.pulse-grid{grid-template-columns:repeat(4,1fr);}}
+.pv{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;position:relative;overflow:hidden;transition:border-color .2s;}
+.pv:hover{border-color:rgba(0,255,163,.15);}
+.pv::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--g),transparent);}
+.pv-label{font-size:9px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px;font-family:'Space Mono',monospace;}
+.pv-name{font-size:13px;font-weight:700;margin-bottom:3px;line-height:1.3;}
+.pv-liner{font-size:11px;color:var(--sub2);line-height:1.5;margin-bottom:10px;}
+.pv-score{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-family:'Space Mono',monospace;color:var(--g);background:var(--glow);border:1px solid rgba(0,255,163,.15);border-radius:6px;padding:3px 9px;}
+.pv-empty{font-size:12px;color:var(--sub);margin-top:6px;font-family:'Space Mono',monospace;}
+.pv-opp{font-size:10px;color:var(--gold);margin-top:5px;font-family:'Space Mono',monospace;}
+.pv-pills{display:flex;gap:4px;margin-top:7px;flex-wrap:wrap;}
+.pv-pill{font-size:9px;font-family:'Space Mono',monospace;background:var(--card2);border-radius:4px;padding:2px 6px;color:var(--sub);}
+
+/* VALIDATE */
+.vbox{max-width:620px;}
+.vbox-title{font-size:20px;font-weight:700;margin-bottom:6px;}
+.vbox-sub{font-size:13px;color:var(--sub2);margin-bottom:20px;line-height:1.6;}
+.v-area{width:100%;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;color:var(--text);font-size:13px;font-family:'Space Grotesk',sans-serif;outline:none;resize:vertical;min-height:100px;line-height:1.6;transition:border-color .2s;}
+.v-area:focus{border-color:rgba(0,255,163,.3);}
+.v-run{width:100%;margin-top:10px;background:var(--g);color:#060609;border:none;border-radius:12px;padding:14px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Space Grotesk',sans-serif;transition:opacity .2s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.v-run:hover{opacity:.9;}
+
+.verdict{border-radius:14px;padding:18px 22px;margin:18px 0;border:1px solid;}
+.v-CLEAR_SPACE{background:rgba(0,255,163,.04);border-color:rgba(0,255,163,.2);}
+.v-PARTIAL_OVERLAP{background:rgba(251,191,36,.04);border-color:rgba(251,191,36,.2);}
+.v-HIGH_OVERLAP{background:rgba(248,113,113,.04);border-color:rgba(248,113,113,.2);}
+.vd-label{font-size:10px;font-weight:700;font-family:'Space Mono',monospace;letter-spacing:.1em;margin-bottom:6px;}
+.v-CLEAR_SPACE .vd-label{color:var(--g);}
+.v-PARTIAL_OVERLAP .vd-label{color:var(--gold);}
+.v-HIGH_OVERLAP .vd-label{color:var(--red);}
+.vd-msg{font-size:13px;color:var(--text);line-height:1.6;}
+
+/* error */
+.err{padding:24px;color:var(--red);font-size:13px;font-family:'Space Mono',monospace;}
+
+@media(max-width:768px){
+  .rail{display:none;}
+  .sidebar{display:none;}
+  .topbar{padding:0 14px;}
+  .cmdbar{padding:12px 14px;}
+  .content{padding:14px;}
+  .stat-row{grid-template-columns:repeat(2,1fr);}
+  .tb-pills{display:none;}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- RAIL -->
+  <div class="rail">
+    <div class="rail-logo" onclick="window.open('https://lbc.network','_blank')">LBC</div>
+    <div class="rail-sep"></div>
+    <div class="rail-btn on" id="rail-research" onclick="setView('research')" title="Research">
+      🔬<span class="rail-tip">Research</span>
+    </div>
+    <div class="rail-btn" id="rail-pulse" onclick="setView('pulse')">
+      📡<span class="rail-tip">Ecosystem Pulse</span>
+    </div>
+    <div class="rail-btn" id="rail-validate" onclick="setView('validate')">
+      💡<span class="rail-tip">Validate Idea</span>
+    </div>
+    <div class="rail-sep"></div>
+    <div class="rail-btn" onclick="quickSearch('digital city community infrastructure Solana')" title="lbc.network">🏛️<span class="rail-tip">lbc.network</span></div>
+    <div class="rail-btn" onclick="quickSearch('DeFi stablecoin protocol liquidity Solana')" title="lbchub.io">💎<span class="rail-tip">lbchub.io</span></div>
+    <div class="rail-btn" onclick="quickSearch('community travel marketplace social token rewards')" title="lbc-hub.com">🌍<span class="rail-tip">lbc-hub.com</span></div>
+    <div class="rail-btn" onclick="quickSearch('live events NFT ticketing creator streaming')" title="lbchub.live">🎤<span class="rail-tip">lbchub.live</span></div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar" id="sidebar">
+    <div class="sb-head">
+      <div class="sb-title">Builder Terminal</div>
+      <div class="sb-sub mono">lbchub.site · v4</div>
+    </div>
+
+    <div class="sb-section">Navigation</div>
+    <div class="sb-link on" id="snav-research" onclick="setView('research')"><span class="sl-icon">🔬</span><span class="sl-txt">Deep Research</span><span class="sl-badge">v4</span></div>
+    <div class="sb-link" id="snav-pulse" onclick="setView('pulse')"><span class="sl-icon">📡</span><span class="sl-txt">Ecosystem Pulse</span><span class="sl-badge">8</span></div>
+    <div class="sb-link" id="snav-validate" onclick="setView('validate')"><span class="sl-icon">💡</span><span class="sl-txt">Validate Idea</span></div>
+
+    <div class="sb-divider"></div>
+    <div class="sb-section">LBC Domains</div>
+    <div class="sb-link" onclick="quickSearch('blockchain protocol governance digital city')"><span class="sl-icon">🏛️</span><span class="sl-txt">lbc.network</span></div>
+    <div class="sb-link" onclick="quickSearch('DeFi stablecoin protocol liquidity Solana')"><span class="sl-icon">💎</span><span class="sl-txt">lbchub.io</span></div>
+    <div class="sb-link" onclick="quickSearch('community travel marketplace social rewards')"><span class="sl-icon">🌍</span><span class="sl-txt">lbc-hub.com</span></div>
+    <div class="sb-link" onclick="quickSearch('developer SDK AI agent DePIN infrastructure')"><span class="sl-icon">⚙️</span><span class="sl-txt">lbchub.site</span></div>
+    <div class="sb-link" onclick="quickSearch('live events NFT ticketing creator streaming')"><span class="sl-icon">🎤</span><span class="sl-txt">lbchub.live</span></div>
+
+    <div class="sb-divider"></div>
+    <div class="sb-hist">
+      <div class="sb-section" style="padding-top:0">Recent</div>
+      <div id="histList"></div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div class="tb-toggle" onclick="toggleSidebar()">☰</div>
+      <div class="tb-path">
+        <span>lbc.network</span><span class="sep">/</span>
+        <span>lbchub.site</span><span class="sep">/</span>
+        <span class="cur" id="tbCur">research</span>
+      </div>
+      <div class="tb-pills">
+        <div class="tb-pill"><span class="pl">Projects</span>&nbsp;<span class="pv">5,400+</span></div>
+        <div class="tb-pill"><span class="pl">Archive</span>&nbsp;<span class="pv">84K</span></div>
+        <div class="tb-pill live-pill"><div class="live-dot"></div>LIVE</div>
+      </div>
+    </div>
+
+    <!-- COMMAND BAR -->
+    <div class="cmdbar" id="cmdbar">
+      <div class="cmd-row">
+        <div class="cmd-input">
+          <span class="cmd-prompt">$</span>
+          <input type="text" id="qInput" placeholder="Search 5,400 Solana projects + 84K archive docs…" onkeydown="if(event.key==='Enter')runSearch()"/>
+          <button class="cmd-x" id="cmdX" onclick="clearAll()">✕</button>
+        </div>
+        <div class="cmd-modes">
+          <button class="cmd-mode on" id="m-quick" onclick="setMode('quick')">Quick</button>
+          <button class="cmd-mode" id="m-deep" onclick="setMode('deep')">Deep</button>
+          <button class="cmd-mode" id="m-archive" onclick="setMode('archive')">Archive</button>
+        </div>
+        <button class="cmd-run" id="runBtn" onclick="runSearch()">RUN ⏎</button>
+      </div>
+      <div class="cmd-tags">
+        <span class="cmd-tag-label">FILTER:</span>
+        <div class="f-tag" data-f="breakout" onclick="toggleF(this)">Breakout</div>
+        <div class="f-tag" data-f="cypherpunk" onclick="toggleF(this)">Cypherpunk</div>
+        <div class="f-tag" data-f="radar" onclick="toggleF(this)">Radar</div>
+        <div class="f-tag" data-f="renaissance" onclick="toggleF(this)">Renaissance</div>
+        <div class="f-div"></div>
+        <div class="q-preset" onclick="setQ('AI agent autonomous payments Solana')">AI Agents</div>
+        <div class="q-preset" onclick="setQ('community marketplace social SocialFi Solana')">Community</div>
+        <div class="q-preset" onclick="setQ('DePIN decentralized physical infrastructure')">DePIN</div>
+        <div class="q-preset" onclick="setQ('stablecoin payments remittance cross-border')">Payments</div>
+        <div class="q-preset" onclick="setQ('travel booking accommodation tourism crypto')">Travel</div>
+        <div class="q-preset" onclick="setQ('live events NFT ticketing creator fan token')">Live</div>
+      </div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content" id="content">
+
+      <!-- EMPTY -->
+      <div class="empty" id="emptyState">
+        <div class="e-grid">
+          <div class="e-card" style="--accent:var(--g)" onclick="sq('AI agent autonomous payments Solana')"><div class="ec-icon">🤖</div><div class="ec-title">AI Agents</div><div class="ec-desc">Autonomous agents, payment rails, Solana-native AI</div></div>
+          <div class="e-card" style="--accent:var(--purple)" onclick="sq('community marketplace social SocialFi rewards')"><div class="ec-icon">👥</div><div class="ec-title">Community</div><div class="ec-desc">Social tokens, NFT vaults, loyalty rewards</div></div>
+          <div class="e-card" style="--accent:var(--blue)" onclick="sq('DePIN decentralized physical infrastructure Solana')"><div class="ec-icon">📡</div><div class="ec-title">DePIN</div><div class="ec-desc">Physical infrastructure on-chain, sensor networks</div></div>
+          <div class="e-card" style="--accent:var(--gold)" onclick="sq('stablecoin payments remittance cross-border mobile')"><div class="ec-icon">💸</div><div class="ec-title">Payments</div><div class="ec-desc">Stablecoins, remittance, instant settlement</div></div>
+          <div class="e-card" style="--accent:var(--orange)" onclick="sq('digital city infrastructure governance blockchain')"><div class="ec-icon">🏙️</div><div class="ec-title">Digital City</div><div class="ec-desc">City infrastructure, governance, LBC ecosystem</div></div>
+          <div class="e-card" style="--accent:var(--red)" onclick="sq('live events NFT ticketing creator fan streaming')"><div class="ec-icon">🎤</div><div class="ec-title">Live Events</div><div class="ec-desc">NFT tickets, creator tokens, streaming</div></div>
+        </div>
+        <div class="e-hint">↑ Pick a category or type your query above</div>
+      </div>
+
+      <!-- LOADER -->
+      <div class="loading" id="loader">
+        <div class="load-card">
+          <div class="load-head">
+            <div class="load-ring"></div>
+            <div>
+              <div class="load-title" id="lTitle">Running query…</div>
+              <div class="load-sub" id="lSub">Connecting to Colosseum Copilot</div>
+            </div>
+          </div>
+          <div class="load-steps" id="lSteps"></div>
+          <div class="load-track"><div class="load-fill" id="lFill"></div></div>
+        </div>
+      </div>
+
+      <!-- RESULTS -->
+      <div id="results" style="display:none;"></div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'https://lumina-7c020410.base44.app/functions/lbcIntelligence';
+const H = {'Content-Type':'application/json','X-LBC-Client':'builders','X-LBC-Domain':'lbchub.site'};
+
+let mode = 'quick', view = 'research', filters = [], running = false;
+let hist = JSON.parse(localStorage.getItem('lbc_h4')||'[]');
+let sidebarOpen = true;
+
+const $=id=>document.getElementById(id);
+
+// ── SIDEBAR ──────────────────────────────────────────────────────────────────
+function toggleSidebar(){ sidebarOpen=!sidebarOpen; $('sidebar').classList.toggle('collapsed',!sidebarOpen); }
+
+// ── VIEW ─────────────────────────────────────────────────────────────────────
+function setView(v){
+  view=v;
+  ['research','pulse','validate'].forEach(x=>{
+    const r=$('rail-'+x), s=$('snav-'+x);
+    if(r) r.classList.toggle('on',x===v);
+    if(s) s.classList.toggle('on',x===v);
+  });
+  $('tbCur').textContent=v;
+  $('cmdbar').style.display=v==='pulse'?'none':'';
+  showEmpty();
+  if(v==='pulse') runPulse();
+  if(v==='validate') renderValidate();
+}
+
+// ── MODE ─────────────────────────────────────────────────────────────────────
+function setMode(m){
+  mode=m;
+  ['quick','deep','archive'].forEach(x=>$('m-'+x).classList.toggle('on',x===m));
+  $('qInput').placeholder = m==='archive'
+    ? 'Search 84K archive docs — a16z, Paradigm, Superteam, Jito, Multicoin…'
+    : m==='deep' ? 'Deep dive — 20 projects + archive docs + full Tech DNA analysis…'
+    : 'Search 5,400 Solana hackathon projects…';
+}
+
+function toggleF(el){
+  el.classList.toggle('on');
+  const f=el.dataset.f;
+  filters=filters.includes(f)?filters.filter(x=>x!==f):[...filters,f];
+}
+
+function setQ(q){ $('qInput').value=q; $('cmdX').classList.add('show'); $('qInput').focus(); }
+function sq(q){ setQ(q); runSearch(); }
+function quickSearch(q){ setView('research'); sq(q); }
+function clearAll(){ $('qInput').value=''; $('cmdX').classList.remove('show'); showEmpty(); }
+
+// ── HISTORY ──────────────────────────────────────────────────────────────────
+function addHist(q,m){ hist=[{q,m,t:Date.now()},...hist.filter(h=>h.q!==q)].slice(0,14); localStorage.setItem('lbc_h4',JSON.stringify(hist)); renderHist(); }
+function ago(t){ const s=Math.floor((Date.now()-t)/1000); if(s<60)return'just now'; if(s<3600)return Math.floor(s/60)+'m ago'; if(s<86400)return Math.floor(s/3600)+'h ago'; return Math.floor(s/86400)+'d ago'; }
+function renderHist(){ const c=$('histList'); if(!c)return; c.innerHTML=hist.map(h=>`<div class="sh-item" onclick="sq('${h.q.replace(/'/g,"\\'")}')"><div class="shi-q">${h.q}</div><div class="shi-m">${h.m} · ${ago(h.t)}</div></div>`).join(''); }
+
+// ── STATES ───────────────────────────────────────────────────────────────────
+function showEmpty(){ $('emptyState').style.display=''; $('loader').classList.remove('on'); $('results').style.display='none'; }
+function showLoader(q,m){
+  $('emptyState').style.display='none'; $('results').style.display='none'; $('loader').classList.add('on');
+  $('lTitle').textContent=`"${q.length>38?q.slice(0,38)+'…':q}"`;
+  $('lSub').textContent=`Mode: ${m.toUpperCase()} · Colosseum Copilot`;
+  const steps = m==='deep'
+    ? [['🔍','Searching 5,400 projects'],['📚','Sweeping 84K archive docs'],['🧠','Running LBC scoring v4'],['◆','Tech DNA + whitespace'],['✅','Generating insights']]
+    : m==='archive'
+    ? [['📚','Querying a16z, Paradigm, Superteam, Jito'],['🔍','Matching to query'],['✅','Ranking by relevance']]
+    : [['🔍','Searching Solana ecosystem'],['🧠','LBC scoring'],['✅','Ranking results']];
+  $('lSteps').innerHTML=steps.map(([d,l],i)=>`<div class="lstep${i===0?' now':''}" id="ls${i}"><div class="lstep-dot"></div>${l}</div>`).join('');
+  $('lFill').style.width='0%';
+  let cur=0;
+  const tick=()=>{ if(cur>0)$('ls'+(cur-1)).className='lstep done'; if(cur<steps.length){$('ls'+cur).className='lstep now';cur++;$('lFill').style.width=((cur/steps.length)*80)+'%';setTimeout(tick,500+Math.random()*400);} };
+  tick();
+}
+function hideLoader(){ $('loader').classList.remove('on'); $('lFill').style.width='100%'; }
+
+// ── API ───────────────────────────────────────────────────────────────────────
+async function api(payload){ const r=await fetch(API,{method:'POST',headers:H,body:JSON.stringify(payload)}); return r.json(); }
+
+// ── SEARCH ───────────────────────────────────────────────────────────────────
+async function runSearch(){
+  const q=$('qInput').value.trim();
+  if(!q||running)return;
+  if(view==='validate'){runValidateNow(q);return;}
+  running=true; $('runBtn').disabled=true; $('cmdX').classList.add('show');
+  addHist(q,mode); showLoader(q,mode);
+  try{
+    let j;
+    const hf=filters.length?{hackathons:filters}:{};
+    if(mode==='deep') j=await api({action:'deep_dive',query:q,filters:hf});
+    else if(mode==='archive') j=await api({action:'search_archives',query:q,limit:12,maxChunksPerDoc:2,intent:'ideation'});
+    else j=await api({action:'search_projects',query:q,limit:12,filters:hf,diversify:true});
+    hideLoader();
+    if(j?.success) renderResults(j.data,q,mode);
+    else showErr(j?.error||'API error');
+  }catch(e){hideLoader();showErr(e.message);}
+  running=false; $('runBtn').disabled=false;
+}
+
+// ── RENDER RESULTS ────────────────────────────────────────────────────────────
+function renderResults(d,q,m){
+  const pane=$('results'); pane.style.display='';
+  if(m==='archive'){
+    const items=d.results||[];
+    pane.innerHTML=rHead(q,items.length,'archive')+items.map(archCard).join('')+(items.length?'':'<p class="err">No archive docs found. Try a different query.</p>');
+    return;
+  }
+  const projs=m==='deep'?(d.projects||[]):(d.results||[]);
+  const archives=d.archives||[];
+  const intel=d.intelligence||{};
+  const dna=(m==='deep'?intel.tech_dna:d.tech_dna)||{};
+  const ws=(m==='deep'?intel.whitespace_opportunities:d.whitespace_opportunities)||[];
+  const angle=(m==='deep'?intel.lbc_angle:d.lbc_angle)||'';
+  const stats=intel.stats||{};
+
+  window._projs=projs; window._archs=archives;
+
+  pane.innerHTML=`
+    ${rHead(q,projs.length,m)}
+    ${m==='deep'?statRow(stats,projs):''}
+    ${angle?angleBox(angle):''}
+    ${ws.length?wsRow(ws):''}
+    ${Object.keys(dna).length?dnaBox(dna):''}
+    ${projs.length||archives.length?tabsRow(projs.length,archives.length):''}
+    <div id="tabContent">${projList(projs)}</div>
+  `;
+}
+
+function rHead(q,n,m){
+  return`<div class="r-head">
+    <div class="rh-query">Results for <em>"${q}"</em></div>
+    <div class="rh-meta">
+      <div class="rh-tag">${n} found</div>
+      <div class="rh-tag">${m.toUpperCase()}</div>
+      <div class="rh-acts">
+        <button class="rh-act" onclick="clearAll()">✕ Clear</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function statRow(stats,projs){
+  const winners=projs.filter(p=>p.prize||p.lbc_signals?.is_winner).length;
+  const accel=projs.filter(p=>p.accelerator||p.lbc_signals?.is_accelerated).length;
+  const avg=projs.length?Math.round(projs.reduce((s,p)=>s+(p.lbc_score||0),0)/projs.length*10)/10:0;
+  const hacks=[...new Set(projs.map(p=>p.hackathon?.name).filter(Boolean))].length;
+  return`<div class="stat-row">
+    <div class="stat"><div class="s-num" style="color:var(--g)">${projs.length}</div><div class="s-label">Projects</div></div>
+    <div class="stat"><div class="s-num" style="color:var(--gold)">${winners}</div><div class="s-label">Winners</div></div>
+    <div class="stat"><div class="s-num" style="color:var(--purple)">${accel}</div><div class="s-label">Accelerated</div></div>
+    <div class="stat"><div class="s-num" style="color:var(--g)">${avg}</div><div class="s-label">Avg Score</div></div>
+    <div class="stat"><div class="s-num" style="color:var(--blue);font-size:16px">${hacks}</div><div class="s-label">Hackathons</div></div>
+  </div>`;
+}
+
+function angleBox(t){return`<div class="angle"><div class="angle-icon">⚡</div><div class="angle-body"><div class="ab-label">LBC Angle</div><div class="ab-text">${t}</div></div></div>`;}
+function wsRow(ws){return`<div class="ws-row">${ws.map(w=>`<div class="ws-tag">${w}</div>`).join('')}</div>`;}
+
+function dnaBox(dna){
+  const max=Math.max(...Object.values(dna).map(Number),1);
+  return`<div class="dna">
+    <div class="dna-head"><div class="dna-title">🔬 Tech DNA</div><span class="dna-ct">${Object.keys(dna).length} signals</span></div>
+    <div class="dna-rows">
+      ${Object.entries(dna).slice(0,10).map(([k,v])=>`
+        <div class="dna-row">
+          <div class="dr-name">${k}</div>
+          <div class="dr-bar"><div class="dr-fill" style="width:${(Number(v)/max)*100}%"></div></div>
+          <div class="dr-n">${v}</div>
+        </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+function tabsRow(pc,ac){
+  return`<div class="tabs">
+    <div class="tab on" id="t-proj" onclick="switchTab('proj')">Projects<span class="tab-n">${pc}</span></div>
+    ${ac?`<div class="tab" id="t-arch" onclick="switchTab('arch')">Archive<span class="tab-n">${ac}</span></div>`:''}
+  </div>`;
+}
+
+function switchTab(t){
+  ['proj','arch'].forEach(x=>{const e=$('t-'+x);if(e)e.classList.toggle('on',x===t);});
+  $('tabContent').innerHTML=t==='proj'?projList(window._projs):archList(window._archs);
+}
+
+function projList(ps){ return ps.length?ps.map(projCard).join(''):'<p class="err">No projects found. Try adjusting your query.</p>'; }
+function archList(as){ return(as&&as.length)?as.map(archCard).join(''):'<p class="err">No archive docs found.</p>'; }
+
+function emoji(p){
+  const t=`${p.oneLiner||''} ${(p.tags?.techStack||[]).join(' ')}`.toLowerCase();
+  if(t.includes('ai')||t.includes('agent'))return'🤖';
+  if(t.includes('travel')||t.includes('booking'))return'✈️';
+  if(t.includes('social')||t.includes('community'))return'👥';
+  if(t.includes('depin')||t.includes('physical'))return'📡';
+  if(t.includes('defi')||t.includes('swap'))return'💱';
+  if(t.includes('nft')||t.includes('ticket'))return'🎟️';
+  if(t.includes('payment')||t.includes('stable'))return'💸';
+  if(t.includes('market'))return'🛒';
+  if(t.includes('game'))return'🎮';
+  return'⚡';
+}
+
+function projCard(p){
+  const score=p.lbc_score||Math.round((p.similarity||0)*100*10)/10;
+  const ev=(p.evidence||[]).filter(Boolean);
+  const stack=[...(p.tags?.techStack||[]),...(p.tags?.primitives||[])].slice(0,5);
+  const link=p.links?.colosseum, gh=p.links?.github, demo=p.links?.demo||p.links?.presentation;
+  return`<div class="pcard" onclick="if(event.target.tagName!=='A'&&'${link}')window.open('${link}','_blank')">
+    <div class="pc-body">
+      <div class="pc-top">
+        <div class="pc-avatar">${emoji(p)}</div>
+        <div class="pc-info">
+          <div class="pc-name">${p.name}</div>
+          <div class="pc-chips">
+            ${p.hackathon?.name?`<span class="chip chip-hack">${p.hackathon.name}</span>`:''}
+            ${score?`<span class="chip chip-score">LBC ${score}</span>`:''}
+            ${p.prize||p.lbc_signals?.is_winner?`<span class="chip chip-win">🏆 Winner</span>`:''}
+            ${p.accelerator||p.lbc_signals?.is_accelerated?`<span class="chip chip-acc">⚡ Accel</span>`:''}
+            ${p.crowdedness?`<span class="chip chip-crowd">${p.crowdedness}</span>`:''}
+          </div>
+        </div>
+      </div>
+      ${p.oneLiner?`<div class="pc-liner">${p.oneLiner}</div>`:''}
+      ${ev.length?`<div class="pc-quote">"${ev[0]}"</div>`:''}
+      ${stack.length?`<div class="pc-tags">${stack.map(t=>`<span class="pc-tag">${t}</span>`).join('')}</div>`:''}
+    </div>
+    <div class="pc-foot">
+      <div class="pc-links">
+        ${link?`<a class="pc-link" href="${link}" target="_blank">🔗 Colosseum</a>`:''}
+        ${gh?`<a class="pc-link" href="${gh}" target="_blank">⌥ GitHub</a>`:''}
+        ${demo?`<a class="pc-link" href="${demo}" target="_blank">▶ Demo</a>`:''}
+      </div>
+      <div class="pc-team">${p.team?.count?`👥 ${p.team.count}`:''}</div>
+    </div>
+  </div>`;
+}
+
+function archCard(a){
+  return`<div class="acard">
+    <div class="ac-top">
+      <div class="ac-src">${a.source_label||a.source||'Unknown'}</div>
+      ${a.relevance_pct?`<div class="ac-pct">${a.relevance_pct}% match</div>`:''}
+    </div>
+    <div class="ac-title">${a.title||'Untitled'}</div>
+    <div class="ac-snip">${(a.snippet||'').slice(0,320)}${(a.snippet||'').length>320?'…':''}</div>
+    <div class="ac-meta">
+      ${a.author?`✍️ ${a.author}`:''}
+      ${a.publishedAt?`· 📅 ${a.publishedAt.slice(0,10)}`:''}
+      ${a.url?`· <a href="${a.url}" target="_blank">↗ Read</a>`:''}
+    </div>
+  </div>`;
+}
+
+function showErr(msg){ $('results').style.display=''; $('results').innerHTML=`<div class="err">Error: ${msg}</div>`; }
+
+// ── PULSE ─────────────────────────────────────────────────────────────────────
+async function runPulse(){
+  $('emptyState').style.display='none'; $('results').style.display='none';
+  $('loader').classList.add('on');
+  $('lTitle').textContent='Scanning 8 LBC Verticals';
+  $('lSub').textContent='ecosystem_pulse · live data';
+  $('lSteps').innerHTML=`<div class="lstep now"><div class="lstep-dot"></div>Querying all 8 verticals simultaneously</div>`;
+  $('lFill').style.width='30%';
+
+  const j=await api({action:'ecosystem_pulse'});
+  hideLoader();
+  if(!j?.success){showErr(j?.error||'API error');return;}
+  const d=j.data, vs=d.verticals||[], sum=d.ecosystem_summary||{};
+
+  $('results').style.display='';
+  $('results').innerHTML=`
+    <div class="r-head">
+      <div class="rh-query">Ecosystem <em>Pulse</em></div>
+      <div class="rh-meta">
+        <div class="rh-tag">${sum.lbc_coverage||'8 verticals'}</div>
+        <div class="rh-tag">${d.pulse_date||'live'}</div>
+        <div class="rh-acts">
+          <div class="rh-act">📊 ${sum.total_projects_scanned||0} scanned</div>
+          <div class="rh-act">🏆 ${sum.total_winners_found||0} winners</div>
+        </div>
+      </div>
+    </div>
+    ${sum.hottest_vertical?angleBox(`Hottest vertical: <strong>${sum.hottest_vertical}</strong> — most hackathon winners this scan. Overall ecosystem health: <strong>${sum.health_score}/100</strong>.`):''}
+    <div class="pulse-grid">
+      ${vs.map(v=>`
+        <div class="pv">
+          <div class="pv-label">${v.vertical}</div>
+          ${v.top_project?`
+            <div class="pv-name">${v.top_project.name}</div>
+            <div class="pv-liner">${v.top_project.oneLiner||''}</div>
+            <div class="pv-score">LBC ${v.top_project.lbc_score}</div>
+            <div class="pv-pills">
+              ${v.top_project.hackathon?`<span class="pv-pill">${v.top_project.hackathon}</span>`:''}
+              ${v.winners?`<span class="pv-pill">🏆 ${v.winners}</span>`:''}
+              <span class="pv-pill">${v.project_count} found</span>
+            </div>
+          `:`<div class="pv-empty">No data found</div><div class="pv-opp">◇ ${v.opportunity}</div>`}
+        </div>`).join('')}
+    </div>`;
+}
+
+// ── VALIDATE ──────────────────────────────────────────────────────────────────
+function renderValidate(){
+  $('emptyState').style.display='none'; $('loader').classList.remove('on');
+  $('results').style.display='';
+  $('results').innerHTML=`
+    <div class="vbox">
+      <div class="vbox-title">Idea Validator</div>
+      <div class="vbox-sub">Describe an LBC feature idea. I'll check if it's being built on Solana and score your opportunity window.</div>
+      <textarea class="v-area" id="ideaBox" placeholder="e.g. A community marketplace where users earn $LBC rewards for verified travel reviews, with AI-powered local discovery and instant crypto settlement…"></textarea>
+      <button class="v-run" onclick="runValidateNow(document.getElementById('ideaBox').value)">🔍 Validate This Idea</button>
+      <div id="vResult"></div>
+    </div>`;
+}
+
+async function runValidateNow(idea){
+  if(!idea.trim())return;
+  const el=$('vResult');
+  if(!el){renderValidate();setTimeout(()=>runValidateNow(idea),100);return;}
+  el.innerHTML=`<div style="padding:20px;color:var(--sub);font-family:'Space Mono',monospace;font-size:12px;text-align:center;">🔍 Scanning 5,400 projects…</div>`;
+  const j=await api({action:'validate_idea',idea});
+  if(!j?.success){el.innerHTML=`<p class="err">Error: ${j?.error}</p>`;return;}
+  const d=j.data;
+  el.innerHTML=`
+    <div class="verdict v-${d.verdict}">
+      <div class="vd-label">${(d.verdict||'').replace(/_/g,' ')}</div>
+      <div class="vd-msg">${d.verdict_message}</div>
+    </div>
+    ${d.lbc_opportunity?angleBox(d.lbc_opportunity):''}
+    ${d.stats?`<div style="font-size:12px;color:var(--sub2);margin-bottom:16px;font-family:'Space Mono',monospace;">${d.stats.projects_found} similar projects · avg ${d.stats.avg_similarity}% similarity · top match: <strong style="color:var(--text)">${d.stats.top_match||'none'}</strong></div>`:''}
+    ${Object.keys(d.tech_dna||{}).length?dnaBox(d.tech_dna):''}
+    ${(d.similar_projects||[]).length?`<div style="font-size:13px;font-weight:700;margin:16px 0 10px">Similar Projects</div>${(d.similar_projects||[]).slice(0,3).map(projCard).join('')}`:''}
+  `;
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+renderHist();
+</script>
+</body>
+</html>
